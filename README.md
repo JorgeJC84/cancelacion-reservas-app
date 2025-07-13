@@ -1,33 +1,43 @@
-# 🏨 Aplicación de Predicción de Cancelación de Reservas
+---
+title: Cancelación de Reservas App
+emoji: 🔔
+colorFrom: indigo
+colorTo: blue
+sdk: gradio
+sdk_version: 4.27.0
+app_file: app.py
+pinned: false
+license: mit
+---
 
-Este proyecto es una aplicación desarrollada con **Streamlit** para predecir la probabilidad de que una reserva hotelera sea cancelada. El modelo fue entrenado con redes neuronales profundas usando Keras.
+# 🔔 Cancelación de Reservas App
 
-## 📦 Archivos del proyecto
+Esta aplicación predice si una reserva será **cancelada o no** en función de variables como:
 
-- `app.py`: Script principal de la app con interfaz web en Streamlit.
-- `modelo_entrenado.keras`: Modelo de red neuronal ya entrenado.
-- `scaler.pkl`: Escalador `StandardScaler` usado para preprocesamiento.
-- `requirements.txt`: Dependencias necesarias para ejecutar el proyecto.
+- Lead Time
+- Cambios en la reserva
+- Reservas canceladas previamente
+- Solicitudes especiales
+- ADR (€ por noche)
 
-## 🚀 Cómo usar esta aplicación
+El modelo ha sido entrenado con redes neuronales utilizando TensorFlow/Keras y se despliega con **Gradio** en Hugging Face Spaces.
 
-1. Clona este repositorio:
-   ```bash
-   git clone https://github.com/JorgeJC84/cancelacion-reservas-app.git
-   cd cancelacion-reservas-app
+## 🛠 Archivos principales
 
-2. Instala las dependencias:
-   ```bash
-   pip install -r requirements.txt
+- `app.py`: código principal de la app con interfaz Gradio
+- `modelo_entrenado.keras`: modelo de predicción entrenado
+- `scaler.pkl`: transformador para escalar los datos antes de la predicción
+- `requirements.txt`: dependencias necesarias
 
-streamlit run app.py
+## 🚀 ¿Cómo usar la app?
 
-🔍 ¿Qué hace esta app?
-Permite al usuario ingresar características básicas de una reserva (tiempo de antelación, cambios, solicitudes especiales, etc.), y predice si esa reserva probablemente será cancelada o no, mostrando un resultado visual.
+1. Ajusta los valores con los controles de la izquierda.
+2. Haz clic en **Submit**.
+3. Verás la predicción a la derecha.
 
-📊 Modelo utilizado
-Se utilizó una red neuronal multicapa con funciones de activación tanh, relu, sigmoid, entrenada con el optimizador RMSprop.
-El modelo logró una precisión de validación del 77.34%.
+> ✅ `Probablemente NO será cancelada.`  
+> ❌ `Probablemente será CANCELADA.`
 
-📫 Autor
-Desarrollado por Jorge Jeria Cortés, Ingeniero Civil Metalúrgico y futuro Científico de Datos.
+---
+
+¡Gracias por visitar esta app! Construida con 💡 y desplegada en Hugging Face Spaces.

@@ -1,36 +1,65 @@
-
-import streamlit as st
+import gradio as gr
 import pandas as pd
 import numpy as np
+from tensorflow.keras.models import load_model
 import joblib
-from keras.models import load_model
 
+# Cargar modelo y escalador
 modelo = load_model("modelo_entrenado.keras")
 escalador = joblib.load("scaler.pkl")
 
-st.set_page_config(page_title="Predicción de Cancelación de Reserva", layout="centered")
-st.title("🏨 Predicción de Cancelación de Reserva")
+# Lista de columnas en el orden correcto
+columnas = ['lead_time', 'booking_changes', 'previous_cancellations',
+            'total_of_special_requests', 'is_repeated_guest', 'adr']
 
-st.write("Ingrese los datos para predecir si la reserva será cancelada o no.")
+# Función de predicción
+def predecir_cancelacion(lead_time, booking_changes, previous_cancellations,
+                          special_requests, adr, is_repeated_guest):
+    try:
+        entrada = pd.DataFrame([[lead_time, booking_changes, previous_cancellations,
+                                 special_requests, int(is_repeated_guest), adr]],
+                               columns=columnas)
 
-lead_time = st.slider("Lead Time", 0, 500, 50)
-booking_changes = st.slider("Cambios en la reserva", 0, 20, 1)
-previous_cancellations = st.selectbox("Reservas canceladas antes", [0, 1, 2, 3])
-total_of_special_requests = st.selectbox("Solicitudes especiales", [0, 1, 2, 3, 4, 5])
-adr = st.number_input("ADR (€)", 0.0, 500.0, 100.0)
+        entrada_escalada = escalador.transform(entrada)
+        prediccion = modelo.predict(entrada_escalada)[0][0]
+        resultado = "❌ Cancelará" if prediccion >= 0.5 else "✅ No cancelará"
+        color = "🔴" if prediccion >= 0.5 else "🟢"
+        return f"🔎 Probabilidad: {prediccion:.2%}", f"{color} {resultado}"
+    except Exception as e:
+        return f"Error: {str(e)}", "❌ Error en la predicción"
 
-if st.button("🔍 Predecir cancelación"):
-    entrada = pd.DataFrame({
-        "lead_time": [lead_time],
-        "booking_changes": [booking_changes],
-        "previous_cancellations": [previous_cancellations],
-        "total_of_special_requests": [total_of_special_requests],
-        "adr": [adr]
-    })
-    entrada_escalada = escalador.transform(entrada)
-    pred = modelo.predict(entrada_escalada)
-    result = (pred > 0.5).astype(int)[0][0]
-    if result == 1:
-        st.error("❌ Probablemente será CANCELADA.")
-    else:
-        st.success("✅ Probablemente NO será cancelada.")
+# Interfaz Gradio
+with gr.Blocks(theme=gr.themes.Soft(), title="Cancelación de Reservas") as interfaz:
+    gr.Markdown("## 🛎️ Predicción de Cancelación de Reserva")
+    gr.Markdown("Ingresa los datos de la reserva para predecir si será cancelada o no.")
+
+    with gr.Row():
+        with gr.Column():
+            lead_time = gr.Slider(0, 500, value=100, label="Lead Time")
+            booking_changes = gr.Slider(0, 20, step=1, value=1, label="Cambios en la reserva")
+            previous_cancellations = gr.Dropdown([0, 1, 2, 3, 4], value=0, label="Reservas canceladas antes")
+            special_requests = gr.Dropdown([0, 1, 2, 3, 4, 5], value=0, label="Solicitudes especiales")
+            adr = gr.Slider(0, 500, value=100, label="ADR (€/noche)")
+            is_repeated_guest = gr.Checkbox(label="¿Cliente repetido?", value=False)
+            boton_clear = gr.Button("Clear")
+            boton_predecir = gr.Button("Submit", variant="primary")
+
+        with gr.Column():
+            salida_texto = gr.Textbox(label="Resultado de la predicción")
+            salida_color = gr.Textbox(label="Indicador tipo semáforo")
+
+    # Conexión del botón Submit
+    boton_predecir.click(
+        predecir_cancelacion,
+        inputs=[lead_time, booking_changes, previous_cancellations, special_requests, adr, is_repeated_guest],
+        outputs=[salida_texto, salida_color]
+    )
+
+    # Conexión del botón Clear
+    boton_clear.click(
+        lambda: [100, 1, 0, 0, 100, False, "", ""],
+        outputs=[lead_time, booking_changes, previous_cancellations, special_requests, adr, is_repeated_guest, salida_texto, salida_color]
+    )
+
+# Lanzar la app
+interfaz.launch()
